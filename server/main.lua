@@ -1,4 +1,4 @@
-lib.versionCheck('TonybynMp4/qbx_camera')
+lib.versionCheck('mri-Qbox-Brasil/qbx_camera')
 
 exports.qbx_core:CreateUseableItem('camera', function(source)
     TriggerClientEvent('qbx_camera:client:openCamera', source)
