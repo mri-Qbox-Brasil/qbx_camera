@@ -3,8 +3,8 @@ game 'gta5'
 
 author 'Tonybyn_Mp4'
 description 'Camera script for the Qbox Framework'
-repository 'https://github.com/TonybynMp4/qbx_camera'
-version '1.0.1'
+repository 'https://github.com/TonybynMp4/y_camera'
+version '1.1.1'
 
 ox_lib 'locale'
 shared_scripts {
@@ -14,7 +14,10 @@ shared_scripts {
 
 ui_page 'html/index.html'
 files {
-    'html/*',
+    'html/assets/*',
+    'html/index.html',
+    'html/style.css',
+    'html/main.js',
     'locales/*'
 }
 

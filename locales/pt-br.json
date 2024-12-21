@@ -10,10 +10,19 @@
     },
     "error": {
         "takePicture": "Você não tirou uma foto",
-        "edit": "Falha ao editar foto"
+        "edit": "Foto editada",
+        "cameraFull": "A memória da câmera está cheia, por favor, exclua algumas fotos!"
     },
     "success": {
-        "edit": "Foto editada com sucesso",
+        "edit": "Falha ao editar a foto",
         "copied": "URL copiado para a área de transferência"
+    },
+    "ui": {
+        "copied": "URL copiado para a área de transferência",
+        "printed": "Uma cópia da foto foi impressa!",
+        "deleted": "Foto excluída!",
+        "deleteConfirmation": "Tem certeza de que deseja excluir esta foto?",
+        "deleteConfirm": "Excluir",
+        "cancel": "Cancelar"
     }
 }

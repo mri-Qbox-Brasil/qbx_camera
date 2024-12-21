@@ -15,18 +15,6 @@ local function helpText()
     DisplayHelpTextFromStringLabel(0, false, true, 1)
 end
 
-local function takePicture()
-    SendNUIMessage({
-        message = 'camera',
-        toggle = false
-    })
-    Wait(10)
-    local tookPic = lib.callback.await('qbx_camera:server:takePicture', false)
-    if not tookPic then
-        exports.qbx_core:Notify(locale('error.takePicture'), 'error')
-    end
-end
-
 local function handleZoom()
     if IsControlJustPressed(0, 241) then
         fov = math.max(fov - ZOOM_SPEED, FOV_MIN)
@@ -58,7 +46,33 @@ local function resetCamera()
     DisplayHud(true)
     DisplayRadar(true)
     ClearTimecycleModifier()
+    LocalPlayer.state:set('invBusy', false)
     fov = DEFAULT_FOV
+end
+
+local function takePicture(cameraSlot)
+    SendNUIMessage({
+        message = 'camera',
+        toggle = false
+    })
+    Wait(200)
+    lib.callback('y_camera:server:takePicture', false, function(tookPic, full)
+        if not tookPic then
+            if full then
+                resetCamera()
+                return exports.qbx_core:Notify(locale('error.cameraFull'), 'error')
+            end
+
+            exports.qbx_core:Notify(locale('error.takePicture'), 'error')
+        end
+    end, cameraSlot)
+    Wait(200)
+    if inCam then
+        SendNUIMessage({
+            message = 'camera',
+            toggle = true
+        })
+    end
 end
 
 local function handleCameraControls()
@@ -75,18 +89,23 @@ local function handleCameraControls()
     SetCamRot(cam, pitch, 0.0, heading, 2)
 end
 
-local function openCamera()
+local function disableControls()
+    DisablePlayerFiring(cache.playerId, true)
+    DisableControlAction(0, 25, true)
+    DisableControlAction(0, 44, true)
+end
+
+local function openCamera(cameraSlot)
     SetNuiFocus(false, false)
-    DisplayHud(false)
-    DisplayRadar(false)
-    TriggerEvent("qbx_hud:client:hideHud")
     inCam = true
+    LocalPlayer.state:set('invBusy', true)
+
     SetTimecycleModifier("default")
-    lib.requestAnimDict("amb@world_human_paparazzi@male@base", 1500)
-    TaskPlayAnim(cache.ped, "amb@world_human_paparazzi@male@base", "base", 2.0, 2.0, -1, 51, 1, false, false, false)
 
     local coords = GetEntityCoords(cache.ped)
     if not cache.vehicle then
+        lib.requestAnimDict("amb@world_human_paparazzi@male@base", 1500)
+        TaskPlayAnim(cache.ped, "amb@world_human_paparazzi@male@base", "base", 2.0, 2.0, -1, 51, 1, false, false, false)
         cameraProp = CreateObject(`prop_pap_camera_01`, coords.x, coords.y, coords.z + 0.2, true, true, true)
         AttachEntityToEntity(cameraProp, cache.ped, GetPedBoneIndex(cache.ped, 28422), 0, 0, 0, 0, 0, 0, true, false, false, false, 2, true)
     end
@@ -108,6 +127,14 @@ local function openCamera()
         toggle = true
     })
 
+    DisplayHud(false)
+    DisplayRadar(false)
+
+    -- Delay to prevent the inventory closing from cancelling by showing the hud
+    SetTimeout(250, function()
+        TriggerEvent("qbx_hud:client:hideHud")
+    end)
+
     CreateThread(function()
         while inCam do
             local zoom = math.floor(((1/fov) * DEFAULT_FOV) * 100) / 100
@@ -126,17 +153,16 @@ local function openCamera()
                 break
             end
             helpText()
+            disableControls()
             handleCameraControls()
             handleZoom()
             if IsControlJustPressed(1, 176) or IsControlJustPressed(1, 24) then
-                inCam = false
                 qbx.playAudio({
                     audioName = 'Camera_Shoot',
                     audioRef = 'Phone_Soundset_Franklin',
                     source = cameraProp
                 })
-                takePicture()
-                resetCamera()
+                takePicture(cameraSlot)
             elseif IsControlJustPressed(1, 194) then
                 resetCamera()
             end
@@ -155,27 +181,69 @@ lib.onCache('vehicle', function(value)
     end
 end)
 
-RegisterNetEvent('qbx_camera:client:openCamera', function()
+RegisterNetEvent('y_camera:client:openCamera', function(data)
     if inCam then return end
-    openCamera()
+    openCamera(data.slot)
 end)
 
-RegisterNetEvent('qbx_camera:client:openPhoto', function(source, data)
+RegisterNetEvent('y_camera:client:openPhoto', function(data)
+    if not data or not data.url then return end
+
     SendNUIMessage({
         message = 'photo',
         toggle = true,
-        source = source,
+        source = data.url,
         title = data.title,
         subText = data.description
     })
     SetNuiFocus(true, true)
 end)
 
-RegisterNUICallback('closePhoto', function()
+RegisterNUICallback('getLocales', function(_, cb)
+    cb({
+        locales = {
+            copied = locale('ui.copied'),
+            printed = locale('ui.printed'),
+            deleted = locale('ui.deleted'),
+            deleteConfirmation = locale('ui.deleteConfirmation'),
+            deleteConfirm = locale('ui.deleteConfirm'),
+            cancel = locale('ui.cancel')
+        }
+    })
+end)
+
+RegisterNUICallback('closePhoto', function(_, cb)
     SetNuiFocus(false, false)
     SendNUIMessage({
         message = 'photo',
         toggle = false
+    })
+    cb({})
+end)
+
+RegisterNUICallback('closeScreen', function(_, cb)
+    SetNuiFocus(false, false)
+    cb({})
+end)
+
+RegisterNUICallback('copyUrl', function(data, cb)
+    lib.setClipboard(data.url)
+    cb({
+        message = locale('success.copied')
+    })
+end)
+
+RegisterNUICallback('printPhoto', function(data, cb)
+    local success = lib.callback.await('y_camera:server:printPhoto', false, data.url)
+    cb({
+        success = success
+    })
+end)
+
+RegisterNUICallback('deletePhoto', function(d, cb)
+    local success = lib.callback.await('y_camera:server:deletePhotoFromCamera', false, d.cameraSlot, d.photoIndex, d.url)
+    cb({
+        success = success
     })
 end)
 
@@ -185,12 +253,12 @@ local function editPicture(slot)
     if not slotData then return end
 
     local input = lib.inputDialog(locale('input.title'), {
-        {type = 'input', label = locale('input.photoTitle'), required = false, min = 0, max = 32, value = slotData.metadata.title or ''},
-        {type = 'input', label = locale('input.description'), required = false, min = 0, max = 128, value = slotData.metadata.description or ''}
+        {type = 'input', label = locale('input.photoTitle'), required = false, min = 0, max = 32, default = slotData.metadata.title or ''},
+        {type = 'input', label = locale('input.description'), required = false, min = 0, max = 128, default = slotData.metadata.description or ''}
     })
 
     if not input then return end
-    if lib.callback.await('qbx_camera:server:editItem', false, slot, input) then
+    if lib.callback.await('y_camera:server:editItem', false, slot, input) then
         exports.qbx_core:Notify(locale('success.edited'), 'success')
     else
         exports.qbx_core:Notify(locale('error.edit'), 'error')
@@ -209,3 +277,35 @@ local function copyURL(slot)
     end
 end
 exports('CopyURL', copyURL)
+
+local function showPicture(slot)
+    local players = lib.getNearbyPlayers(GetEntityCoords(cache.ped), 5, false)
+    if not players then return end
+    for i = 1, #players do
+        players[i].id = GetPlayerServerId(players[i].id)
+    end
+
+    local slotData = exports.ox_inventory:GetPlayerItems()[slot]
+    local data = {
+        url = slotData.metadata.source,
+        title = slotData.metadata.title,
+        description = slotData.metadata.description,
+        sourceCoords = GetEntityCoords(cache.ped)
+    }
+    TriggerServerEvent('y_camera:server:showPicture', players, data)
+end
+exports('ShowPicture', showPicture)
+
+local function showScreen(slot)
+    local slotData = exports.ox_inventory:GetPlayerItems()[slot]
+    if not slotData then return end
+
+    SendNUIMessage({
+        message = 'toggleScreen',
+        toggle = true,
+        photos = slotData.metadata.photos,
+        cameraSlot = slot
+    })
+    SetNuiFocus(true, true)
+end
+exports('ShowScreen', showScreen)

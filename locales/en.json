@@ -10,10 +10,19 @@
     },
     "error": {
         "takePicture": "You did not take a picture",
-        "edit": "Photo edited"
+        "edit": "Photo edited",
+        "cameraFull": "Camera memory is full, please delete some photos!"
     },
     "success": {
         "edit": "Failed to edit photo",
         "copied": "URL copied to clipboard"
+    },
+    "ui": {
+        "copied": "URL copied to clipboard",
+        "printed": "A copy of the photo was printed!",
+        "deleted": "Photo deleted!",
+        "deleteConfirmation": "Are you sure you want to delete this photo?",
+        "deleteConfirm": "Delete",
+        "cancel": "Cancel"
     }
 }

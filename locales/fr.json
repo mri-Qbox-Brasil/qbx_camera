@@ -10,10 +10,19 @@
     },
     "error": {
         "takePicture": "Impossible de prendre une photo",
-        "edit": "Impossible de modifier la photo"
+        "edit": "Impossible de modifier la photo",
+        "cameraFull": "La mémoire de l'appareil photo est pleine, veuillez supprimer des photos!"
     },
     "success": {
         "edit": "Photo modifiée",
         "copied": "URL copiée"
+    },
+    "ui": {
+        "copied": "URL copiée",
+        "printed": "Une copie de la photo a été imprimée!",
+        "deleted": "Photo supprimée!",
+        "deleteConfirmation": "Voulez-vous vraiment supprimer cette photo?",
+        "deleteConfirm": "Supprimer",
+        "cancel": "Annuler"
     }
 }

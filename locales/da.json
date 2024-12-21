@@ -10,10 +10,19 @@
     },
     "error": {
         "takePicture": "Der opstod en fejl, prøv igen",
-        "edit": "Foto redigeret"
+        "edit": "Foto redigeret",
+        "cameraFull": "Kameraets hukommelse er fuld, slet venligst nogle billeder!"
     },
     "success": {
         "edit": "Der opstod en fejl under redigeringen",
         "copied": "URL kopiereret til klippeværktøj"
+    },
+    "ui": {
+        "copied": "URL kopieret til udklipsholder",
+        "printed": "En kopi af billedet er blevet printet!",
+        "deleted": "Billede slettet!",
+        "deleteConfirmation": "Er du sikker på at du vil slette dette billede?",
+        "deleteConfirm": "Slet",
+        "cancel": "Annuller"
     }
 }
