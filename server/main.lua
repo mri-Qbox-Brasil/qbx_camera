@@ -30,8 +30,11 @@ lib.callback.register('y_camera:server:takePicture', function(source, cameraSlot
     local photos = inventorySlot.metadata.photos or {}
 
     if #photos < config.maxCameraSlots then
-        local imageData = exports.fmsdk:takeServerImage(source)
-        if not imageData then return false end
+        local imageData = exports.fmsdk:takeServerImage(source).data
+        if not imageData then
+            lib.print.error(('Player: %s tried to take a photo but the image data is nil'):format(source))
+            return false
+        end
 
         photos[#photos + 1] = { url = imageData.url }
 
@@ -47,7 +50,10 @@ lib.callback.register('y_camera:server:printPhoto', function(source, url)
 
     if not url or type(url) ~= "string" then return false end
     -- Only allow images from the fivemanage server (security goes brrrr i guess?)
-    if string.sub(url, 1, 32) ~= 'https://r2.fivemanage.com/images' then return false end
+    if string.sub(url, 1, 26) ~= 'https://r2.fivemanage.com/' then
+        lib.print.error(('Tried to print a photo from a URL that isn\'t allowed: %s'):format(url))
+        return false
+    end
     givePicture(source, { url = url })
 
     return false
